@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Welcome to Firebase Hosting</title>
+
+    <script src="https://www.gstatic.com/firebasejs/8.2.6/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.6/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.2.6/firebase-database.js"></script>
+
+    <style media="screen">
+      .off{
+        display: none;
+      }
+
+      #pic {
+        border-radius: 50%;
+      }
+
+      #messages {
+        height: 200px;
+        overflow: auto;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        list-style: none;
+        text-align: left;
+        padding-left: 10px;
+      }
+
+      #messageInt {
+        width: 80%;
+        margin: 5px 0px;
+      }
+
+      #mensaje {
+        padding: 15px;
+      }
+
+      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; text-align: center;}
+      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
+      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
+      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
+      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
+      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
+      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
+      @media (max-width: 600px) {
+        body, #message { margin-top: 0; background: white; box-shadow: none; }
+        body { border-top: 16px solid #ffa100; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="message">
+      <img src="" alt="" id="pic">
+      <h2 id="name">Hola!</h2>
+      <h1></h1>
+      <p id="email">Bienvenido al chat-croto!</p>
+      <div id="messageContainer" style="display: none;">
+        <ul id="messages"></ul>
+        <input type="text" name="" id="messageInt" placeholder="Escribí tu mensaje acá">
+        <button id="messagePush">Enviar</button>
+      </div>
+      <a target="_blank" href="" id="login">Logeá</a>
+      <a target="_blank" href="" id="logout" style="display: none;">Deslogeá</a>
+    </div>
+    <p id="load">Firebase SDK Loading&hellip;</p>
+
+    <script>
+     
+     const firebaseConfig = {
+      apiKey: "AIzaSyAPtjRqukxwhgASFqG2ElCjxChmm4psJgI",
+      authDomain: "chat-croto.firebaseapp.com",
+      projectId: "chat-croto",
+      storageBucket: "chat-croto.appspot.com",
+      messagingSenderId: "374060794122",
+      appId: "1:374060794122:web:d11080ca142282a6333af3"
+    };
+
+  firebase.initializeApp(firebaseConfig);
+
+      const btn = document.getElementById("login")
+      const btnDos = document.getElementById("logout")
+      let pic = document.getElementById("pic")
+      let email = document.getElementById("email")
+      let name = document.getElementById("name")
+      let messageContainer = document.getElementById("messageContainer")
+      let messages = document.getElementById("messages")
+      let mensaje = document.getElementById("mensaje")
+      let messagePush = document.getElementById("messagePush")
+
+      btnDos.addEventListener("click", (e)=>{
+        e.preventDefault();
+        deslogear()
+      })
+
+      btn.addEventListener("click", (e)=>{
+        e.preventDefault();
+        logear()
+      })
+
+      messagePush.addEventListener("click", (e)=>{
+        e.preventDefault()
+        guardarMensaje()
+      })
+
+      let usuario = {}
+
+     function logear(){
+      const provider = new firebase.auth.GoogleAuthProvider()
+        firebase.auth().signInWithPopup(provider).then(result=> {
+          console.log("Logeó: ", result.user.email)
+          usuario = result
+          decorarUsuario()
+        }).catch(error=> console.log(error.message))
+       
+     } 
+
+     function deslogear(){
+        firebase.auth().signOut().then(()=> console.log("Deslogeaste")).catch(error=> console.log(error.message));
+        redecorarUsuario()
+     }
+
+     function decorarUsuario(){
+      name.innerHTML = usuario.user.displayName;
+      pic.src = usuario.user.photoURL;
+      email.innerHTML = usuario.user.email;
+      btn.style.display = "none";
+        btnDos.style.display = "block";
+        messageContainer.style.display = "block"
+        mostrame()
+
+      }
+      
+      function redecorarUsuario(){
+      name.innerHTML = "Hola!";
+      pic.src = "";
+      email.innerHTML = "Bienvenido al chat-croto!";
+      btn.style.display = "block";
+      btnDos.style.display = "none";
+      messageContainer.style.display = "none"
+      }
+      
+
+      function guardarMensaje(){
+        const record = {
+          avatar: usuario.user.photoURL,
+          name: usuario.user.displayName,
+          txt: messageInt.value
+        }
+
+        const db = firebase.database();
+        const dbRef = db.ref("mensajes");
+        const newMensaje = dbRef.push();
+        newMensaje.set(record);
+        messageInt.value = ""
+      }
+
+      document.addEventListener("DOMContentLoaded", ()=>{
+        firebase.auth().onAuthStateChanged(user =>{
+          if(user){
+            usuario = {"user":user}
+            decorarUsuario()
+          }
+        })
+      })
+
+      function mostrame() {
+        const db = firebase.database();
+        const dbRef = db.ref("mensajes")
+        dbRef.on("child_added", snapshot =>{
+          let item = document.createElement("li");
+          item.innerHTML = `<strong>${snapshot.val().name}:</strong> ${snapshot.val().txt}`;
+          messages.appendChild(item);
+          let items = document.querySelectorAll('li')
+          let ultimo = items[items.length-1]
+          ultimo.scrollIntoView()
+      })
+      }
+     
+
+    </script>
+  </body>
+</html>
